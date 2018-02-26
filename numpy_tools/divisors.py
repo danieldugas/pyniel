@@ -1,3 +1,5 @@
+import numpy as np
+
 def divisors(x):
     if np.max(x) > 100000:
         print("Warning: this function is not optimized for large numbers. Aborting.")

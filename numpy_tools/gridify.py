@@ -1,3 +1,6 @@
+from .divisors import divisors
+import numpy as np
+
 def gridify(x,y,val=None, grid=None, resolution=(100,100), value_approximation='min'):
     # Converts a set of points in x, y to an occupancy grid
     # Optionally a value can be attached to each point, in which case cell values are approximated
