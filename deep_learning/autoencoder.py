@@ -1,7 +1,11 @@
 import numpy as np
 import tensorflow as tf
 
-class ModelParams:
+from .modelparams import ModelParams
+from .custom_ops import n_dimensional_weightmul
+from .custom_ops import gaussian_log_likelihood
+
+class VAEParams(ModelParams):
   def __init__(self):
     self.INPUT_SHAPE = [28,28,1,1]
     self.CONVOLUTION_LAYERS = [{'type': 'conv3d', 'filter': [5, 5, 1,   1,  64], 'downsampling': {'type': 'max_pool3d', 'k': 2}},
@@ -17,38 +21,8 @@ class ModelParams:
     self.ADVERSARIAL = False
     self.MUTUAL_INFO = False
     self.INFO_REG_COEFF = 0.5
-  def __str__(self):
-    return str(self.__dict__)
-  def __eq__(self, other): 
-    return self.__dict__ == other.__dict__
-  def __ne__(self, other):
-    return not self.__eq__(other)
 
 TINY = 1e-8
-
-def n_dimensional_weightmul(L, W, L_shape, Lout_shape, first_dim_of_l_is_batch=True):
-  """ Equivalent to matmul(W,L)
-      but works for L with larger shapes than 1
-      L_shape and Lout_shape are excluding the batch dimension (0)"""
-  if not first_dim_of_l_is_batch:
-    raise NotImplementedError
-  if len(L_shape) == 1 and len(Lout_shape) == 1:
-    return tf.matmul(L, W)
-  # L    : ?xN1xN2xN3x...
-  # Lout : ?xM1xM2xM3x...
-  # W    : N1xN2x...xM1xM2x...
-  # Einstein notation: letter b (denotes batch dimension)
-  # Lout_blmn... = L_bijk... * Wijk...lmn...
-  letters = list('ijklmnopqrst')
-  l_subscripts = ''.join([letters.pop(0) for _ in range(len(L_shape))])
-  lout_subscripts   = ''.join([letters.pop(0) for _ in range(len(Lout_shape))])
-  einsum_string = 'b'+l_subscripts+','+l_subscripts+lout_subscripts+'->'+'b'+lout_subscripts
-  return tf.einsum(einsum_string,L,W)
-
-def gaussian_log_likelihood(sample, mean, log_sigma_squared):
-    stddev = tf.sqrt(tf.exp(log_sigma_squared))
-    epsilon = (sample - mean) / (stddev + TINY)
-    return tf.reduce_sum(- 0.5 * np.log(2 * np.pi) - tf.log(stddev + TINY) - 0.5 * tf.square(epsilon), axis=1)
 
 class Autoencoder(object):
   def __init__(self, model_params):
@@ -119,7 +93,7 @@ class Autoencoder(object):
                                                                  'DecoderLayer'+str(i), 'DecoderLayer'+str(i)+'Weights', '_decoder_'+str(i),
                                                                  put_variables_in_list=self.G_variables)
     # Post fully-connected layer
-    previous_layer, previous_layer_shape = self.build_FC_layer({'shape': [np.prod(self.shape_before_flattening)]}, 
+    previous_layer, previous_layer_shape = self.build_FC_layer({'shape': [np.prod(self.shape_before_flattening)]},
                                                                previous_layer, previous_layer_shape,
                                                                'Reconstruction', 'ReconstructionLayerWeights', '_reconstruction',
                                                                activation=tf.nn.sigmoid, put_variables_in_list=self.G_variables)
@@ -315,7 +289,7 @@ class Autoencoder(object):
       if not reuse:
         self.variables.append(weights)
         self.variables.append(biases)
-        if put_variables_in_list is not None: 
+        if put_variables_in_list is not None:
             put_variables_in_list.append(weights)
             put_variables_in_list.append(biases)
       layer_output = tf.nn.conv3d(previous_layer, weights, strides, padding)
@@ -353,7 +327,7 @@ class Autoencoder(object):
       if not reuse:
         self.variables.append(weights)
         self.variables.append(biases)
-        if put_variables_in_list is not None: 
+        if put_variables_in_list is not None:
             put_variables_in_list.append(weights)
             put_variables_in_list.append(biases)
         self.variable_summaries(weights)
@@ -383,7 +357,7 @@ class Autoencoder(object):
       if not reuse:
         self.variables.append(weights)
         self.variables.append(biases)
-        if put_variables_in_list is not None: 
+        if put_variables_in_list is not None:
             put_variables_in_list.append(weights)
             put_variables_in_list.append(biases)
       output_shape=[dynamic_batch_size]+target_output_shape
@@ -459,4 +433,3 @@ def batch_generic_func(function, batch_input, batch_size=100, verbose=False):
     b += batch_size
     if verbose: print("Example " + str(min(a,len(batch_input))) + "/" + str(len(batch_input)))
   return output
-
