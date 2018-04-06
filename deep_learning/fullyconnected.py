@@ -64,6 +64,7 @@ class FCNetwork(object):
       self.cost = tf.reduce_mean(self.loss)
       if not self.MP.DISABLE_SUMMARY:
           tf.summary.scalar('cost', self.cost)
+
     # Optimizers (ADAM)
     with tf.name_scope('Optimizer') as scope:
       self.optimizer = tf.train.AdamOptimizer(learning_rate=self.MP.LEARNING_RATE)

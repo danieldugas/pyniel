@@ -16,3 +16,13 @@ def one_hot(labels, depth, on_value=1.0, off_value=0.0):
     one_hot = np.ones(y.shape + (depth,)) * off_value
     one_hot[..., np.arange(y.shape[-1]), y.astype(int)] = on_value
     return one_hot
+
+def softmax(y, axis=-1):
+    """ softmax function in numpy
+    applies to the last axis.
+    """
+    # we don't want to get rid of the sum axis, so we store the desired shape
+    sumshape = list(y.shape)
+    sumshape[axis] = 1
+    sumshape = tuple(sumshape)
+    return np.exp(y) * 1.0 / np.sum(np.exp(y), axis=axis).reshape(sumshape)
