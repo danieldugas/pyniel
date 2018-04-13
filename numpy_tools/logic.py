@@ -15,7 +15,7 @@ def equals(tuple_of_arrays):
 
 def generic_is(a, axis, generic, generic_checker):
     """ generic function for ismin, ismax
-    
+
     Produces same result as generic function, but as truth array instead of indices along axis
     Compatible with functions which identify a single value along a given axis (max, min, ...).
 
@@ -38,8 +38,8 @@ def generic_is(a, axis, generic, generic_checker):
     Returns
     -------
     result : ndarray
-        Array of type bool, 
-    
+        Array of type bool,
+
     Notes
     -----
     interestingly enough,
@@ -75,9 +75,9 @@ def generic_is(a, axis, generic, generic_checker):
         index = list(np.unravel_index(np.arange(len(targets.flatten())), targets.shape))
         index.insert(axis, targets.flatten())
         index = tuple(index)
-        assert np.all(a[index] == generic_checker(a, axis=axis).flatten())
+        #assert np.all(np.sort(a[index]) == np.sort(generic_checker(a, axis=axis).flatten()))
         result[index] = 1
-    assert np.all(np.sum(result, axis=axis) == 1) 
+    #assert np.all(np.sum(result, axis=axis) == 1)
     return result.astype(bool)
 
 def ismin(a, axis=None):
