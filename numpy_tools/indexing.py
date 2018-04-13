@@ -1,6 +1,6 @@
 import numpy as np
 
-def as_idx(a, axis=None):
+def as_idx_array(a, axis=None):
     """ Returns an array of shape a containing indices for a
 
     Parameters
@@ -26,11 +26,11 @@ def as_idx(a, axis=None):
     array([[0, 0, 0],
            [0, 0, 9],
            [3, 6, 0]])
-    >>> as_idx(a)
+    >>> as_idx_array(a)
     array([[0, 1, 2],
            [3, 4, 5],
            [6, 7, 8]])
-    >>> as_idx(a, axis='all')
+    >>> as_idx_array(a, axis='all')
     array([[[0, 0],
             [0, 1],
             [0, 2]],
@@ -42,9 +42,7 @@ def as_idx(a, axis=None):
            [[2, 0],
             [2, 1],
             [2, 2]]])
-
-
-    >>> as_idx(a, axis=0)
+    >>> as_idx_array(a, axis=0)
     array([[0, 0, 0],
            [1, 1, 1],
            [2, 2, 2]])
@@ -55,6 +53,79 @@ def as_idx(a, axis=None):
     if axis == 'all':
         return idxs
     return idxs[...,axis]
+
+def as_idx(a):
+    """ returns a tuple with indices for all values in a
+
+    Parameters
+    ----------
+    a : array_like
+        Array to be reshaped.
+
+    Returns
+    -------
+    result : tuple of ndarrays
+        of size len(a.shape)
+        each ndarray has shape (len(a.flatten()),)
+
+    Example
+    -------
+    >>> a = np.array([[0, 0, 0], [0, 0, 9], [3, 6, 0]])
+    >>> a
+    array([[0, 0, 0],
+           [0, 0, 9],
+           [3, 6, 0]])
+    >>> as_idx(a)
+    (array([0, 0, 0, 1, 1, 1, 2, 2, 2]), array([0, 1, 2, 0, 1, 2, 0, 1, 2]))
+    >>> np.all(a[as_idx(a)] == a.flatten())
+    True
+    """
+    return np.where(np.ones(a.shape))
+
+def filter_invalid_idx(idx, array, ignore_extra_dimensions=False):
+    """ removes indices from idx which do not point to a location in array
+
+    Parameters
+    ----------
+    idx : tuple of indices
+        indices to verify
+    array : ndarray
+        array in which indices are tested
+    ignore_extra_dimensions : bool
+        if True, idx values for axes not in array are ignored, and do not
+        prevent indices from being valid if the other axes are within array.
+        if False, all indices in idx with more dimensions than a are strictly
+        marked as invalid.
+
+    Returns
+    -------
+    result : tuple of indices
+        subset of idx with only valid values
+
+    Example
+    -------
+    >>> a = np.ones((1,2,3))
+    >>> b = np.ones((3,2,1))
+    >>> idx = np.where(b==1)
+    >>> idx
+    (array([0, 0, 1, 1, 2, 2]), array([0, 1, 0, 1, 0, 1]), array([0, 0, 0, 0, 0, 0]))
+    >>> filter_invalid_idx(idx, a)
+    (array([0, 0]), array([0, 1]), array([0, 0]))
+    """
+    if not ignore_extra_dimensions:
+        if len(array.shape) < len(idx):
+            raise Warning("Indices point to more dimensions than exist in array.\
+             Default behavior is to flag them all as invalid. Set\
+             ignore_extra_dimensions to True to reduce strictness. Otherwise\
+             ensure that the dimensionalities match.")
+            return tuple()
+    maxdim = min(len(array.shape), len(idx)) # larger dimensions are irrelevant
+    max_idx = np.array(array.shape[:maxdim]) - 1 # max index for each axis
+    test = np.array(idx[:maxdim]).T
+    is_valid = np.all(np.logical_and(test <= max_idx, test >= -1-max_idx),
+                      axis=-1)
+    return tuple(test[is_valid].T)
+
 
 if __name__ == '__main__':
     import doctest
