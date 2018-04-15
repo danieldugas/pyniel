@@ -3,8 +3,7 @@ import numpy as np
 from .enforcetype import asarray
 
 class Average:
-  """
-  Keeps track of average of added values
+  """Keeps track of the average of added values
   """
   def __init__(self, values=None, value_names=None):
     self.values = asarray(values)

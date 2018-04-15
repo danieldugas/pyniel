@@ -14,7 +14,7 @@ def resize_with_fill(a, shape, fill_value=np.nan):
         Array to be reshaped.
     shape : tuple of ints
         new shape
-    fill_value (optional) : value
+    fill_value : value, optional
         value to fill in newly created cells
 
     Returns
@@ -38,9 +38,10 @@ def resize_with_fill(a, shape, fill_value=np.nan):
            [ 1.,  1.,  1., nan],
            [nan, nan, nan, nan]])
     """
-    if len(shape) != len(a.shape): raise ValueError("Expected new shape to have\
-     as many dimensions as old shape. Reshape to desired number of dimensions\
-     before calling resize_with_fill")
+    if len(shape) != len(a.shape):
+        raise ValueError("Expected new shape to have as many dimensions as "\
+                         "old shape. Reshape to desired number of dimensions "\
+                         "before calling resize_with_fill")
     resized = np.full(shape, fill_value=fill_value)
     idx = filter_invalid_idx(as_idx(a), resized)
     resized[idx] = a[idx]
@@ -54,7 +55,7 @@ def from_list_of_lists(l, fill_value=np.nan):
     ----------
     l : list
         list of lists
-    fill_value (optional) : value
+    fill_value : value, optional
         value to fill in newly created cells
 
     Returns
@@ -83,12 +84,14 @@ def from_list_of_lists(l, fill_value=np.nan):
             [nan],
             [nan]]])
     """
-    if type(l[0][0]) is list and type(fill_value) is not list:
-        raise ValueError("fill_value must be the same type as items in the" +
-        " sublist. Here items in the sublist are lists of size "
-        + str(len(l[0][0]))+ ", for example: " + str(l[0][0]) +
-        ". fill_value must also be a list of size " + str(len(l[0][0])) + ".")
-    length = len(sorted(l,key=len, reverse=True)[0]) # length of longest sublist
+    if isinstance(l[0][0], list) and not isinstance(fill_value, list):
+        errorstring = ("fill_value must be the same type as items in the "\
+                       "sublist. Here items in the sublist are lists of size "\
+                       "{}, for example: {}. fill_value must also be a list "\
+                       "of size {}.").format(str(len(l[0][0])), str(l[0][0]),
+                                             str(len(l[0][0])))
+        raise ValueError(errorstring)
+    length = len(sorted(l, key=len, reverse=True)[0])
     return np.array([list(li)+[fill_value]*(length-len(li)) for li in l])
 
 if __name__ == '__main__':

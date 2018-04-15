@@ -1,4 +1,8 @@
+import warnings
 import numpy as np
+""" Index tools
+Daniel Dugas
+"""
 
 def as_idx_array(a, axis=None):
     """ Returns an array of shape a containing indices for a
@@ -52,7 +56,7 @@ def as_idx_array(a, axis=None):
     idxs = np.array(np.where(np.ones(a.shape))).T.reshape(a.shape + (-1,))
     if axis == 'all':
         return idxs
-    return idxs[...,axis]
+    return idxs[..., axis]
 
 def as_idx(a):
     """ returns a tuple with indices for all values in a
@@ -114,10 +118,11 @@ def filter_invalid_idx(idx, array, ignore_extra_dimensions=False):
     """
     if not ignore_extra_dimensions:
         if len(array.shape) < len(idx):
-            raise Warning("Indices point to more dimensions than exist in array.\
-             Default behavior is to flag them all as invalid. Set\
-             ignore_extra_dimensions to True to reduce strictness. Otherwise\
-             ensure that the dimensionalities match.")
+            warnings.warn("Indices point to more dimensions than exist in "\
+                          "array. Default behavior is to flag them all as "\
+                          "invalid. Set ignore_extra_dimensions to True to "\
+                          "reduce strictness. Otherwise ensure that the "\
+                          "dimensionalities match.")
             return tuple()
     maxdim = min(len(array.shape), len(idx)) # larger dimensions are irrelevant
     max_idx = np.array(array.shape[:maxdim]) - 1 # max index for each axis
