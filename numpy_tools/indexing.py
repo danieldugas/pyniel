@@ -131,6 +131,17 @@ def filter_invalid_idx(idx, array, ignore_extra_dimensions=False):
                       axis=-1)
     return tuple(test[is_valid].T)
 
+def sliding_window(a, size=3, fill_value=np.nan):
+    """ Applies a sliding window of shape size^a_ndim to array a,
+
+    TODO: generalize to a shape > 2x2
+    returns an array of shape (size^a_ndim, a.shape)
+    in which the first dimension corresponds to value of a for each flat index
+    in the window."""
+    # We generate pad_widths for each
+    paddings = np.array(np.where(np.ones((size,)*a.ndim))).T[:,:,None] * [1, -1] + [0, size-1]
+    paddeds = np.array([np.pad(X, pad, 'constant', constant_values=fill_value) for pad in paddings])
+    return paddeds[size//2:-(size//2), size//2:-(size//2)]
 
 if __name__ == '__main__':
     import doctest
