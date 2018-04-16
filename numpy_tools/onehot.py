@@ -1,7 +1,9 @@
 import numpy as np
+from numpy_tools.indexing import as_idx
 
 def one_hot(labels, depth, on_value=1.0, off_value=0.0):
     """ Takes an numpy array and replaces the last axis with a one_hot encoding
+    Daniel Dugas
 
     Args:
             labels (np.ndarray): Input array
@@ -11,10 +13,31 @@ def one_hot(labels, depth, on_value=1.0, off_value=0.0):
             (np.ndarray) one_hot encoding with shape labels.shape + (depth,)
 
     The inverse of one_hot is np.argmax(one_hot_array, axis=-1)
+
+    Example
+    -------
+    >>> a = np.array([[0, 1, 2],[1, 2, 0], [2, 2, 1]])
+    >>> a
+    array([[0, 1, 2],
+           [1, 2, 0],
+           [2, 2, 1]])
+    >>> one_hot(a, 3)
+    array([[[1., 0., 0.],
+            [0., 1., 0.],
+            [0., 0., 1.]],
+    <BLANKLINE>
+           [[0., 1., 0.],
+            [0., 0., 1.],
+            [1., 0., 0.]],
+    <BLANKLINE>
+           [[0., 0., 1.],
+            [0., 0., 1.],
+            [0., 1., 0.]]])
     """
-    y = np.array(labels)
-    one_hot = np.ones(y.shape + (depth,)) * off_value
-    one_hot[..., np.arange(y.shape[-1]), y.astype(int)] = on_value
+    a = np.array(labels)
+    one_hot = np.ones(a.shape + (depth,)) * off_value
+    switch_on = as_idx(a) + (np.array(a).astype(np.intp).flatten(),)
+    one_hot[switch_on] = on_value
     return one_hot
 
 def softmax(y, axis=-1):

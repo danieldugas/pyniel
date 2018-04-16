@@ -140,8 +140,8 @@ def sliding_window(a, size=3, fill_value=np.nan):
     in the window."""
     # We generate pad_widths for each
     paddings = np.array(np.where(np.ones((size,)*a.ndim))).T[:,:,None] * [1, -1] + [0, size-1]
-    paddeds = np.array([np.pad(X, pad, 'constant', constant_values=fill_value) for pad in paddings])
-    return paddeds[size//2:-(size//2), size//2:-(size//2)]
+    paddeds = np.array([np.pad(a, pad, 'constant', constant_values=fill_value) for pad in paddings])
+    return paddeds[:, size//2:-(size//2), size//2:-(size//2)]
 
 if __name__ == '__main__':
     import doctest
