@@ -73,7 +73,7 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
         dd = X - np.mean(X, axis=0)
         Cx = np.sum(px * np.matmul(dd[:,:,None], dd[:,None,:]), axis=0)
         l, _ = np.linalg.eig(Cx)
-        T0 = T = 2*np.max(l) # is this valid with other metrics?
+        T0 = T = np.sqrt(np.max(l)/2) # dirty and wrong but works?
 
         self.cluster_centers_ = np.array([np.mean(X, axis=0)])
         self.bifurcation_tree_.create_node(0, 0, data={"T": T})
@@ -207,10 +207,11 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
             raise KeyError("Logging must be enabled for plotting")
         fig = plt.figure(figsize=(20,10))
         ax = fig.subplots(3,1)
+        ax[0].set_title('Training log')
         ax[0].plot(dist/(np.min(dist) + TINY), 'k--')
         ax[0].set_ylabel("<D/Dmin>")
         ax[0].set_xscale("log", nonposx='clip')
-        ax[0].set_yscale("log", nonposy='clip')
+        #ax[0].set_yscale("log", nonposy='clip')
         ax[1].step(n_c, 'k')
         ax[1].set_xscale("log", nonposx='clip')
         ax[1].set_ylabel("n_effective_clusters")
@@ -219,23 +220,34 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
         #ax[2].set_yscale("log", nonposy='clip')
         ax[2].set_ylabel("T")
         ax[2].set_xlabel("steps")
+        plt.show()
         return fig, ax
 
 if __name__ == '__main__':
     plt.ion()
-    X = np.random.normal(0,1, size=(1000,2))
-    DAC = DeterministicAnnealingClustering(log={'effective_distortion', 'distortion', 'temperature', 'n_effective_clusters', 'cluster_centers'})
-
+    # Generate example data
+    centers = np.array([[-1,-1], [-1,1], [1,-1], [1,1], [0,0]])
+    X = np.concatenate([np.random.normal(c,0.5, size=(200,2)) for c in centers],
+                       axis=0)
+    # Fit model
+    DAC = DeterministicAnnealingClustering(n_clusters=5,
+                                           log={'distortion',
+                                                'temperature',
+                                                'n_effective_clusters',
+                                                'cluster_centers'})
     try:
         DAC.fit(X)
     except KeyboardInterrupt:
         print("interrupted")
 
+    # Plot results
     c = DAC.cluster_centers_
     p = np.argmax(DAC.predict(X), axis=-1)
     fig = plt.figure(figsize=(20,10))
     ax = fig.subplots(1,2)
+    ax[0].set_title('Input Data')
     ax[0].scatter(X[:,0], X[:,1])
+    ax[1].set_title('Hard DAC clustering')
     ax[1].scatter(X[:,0], X[:,1], c=p)
     ax[1].scatter(c[:,0], c[:,1], marker='x', color='red')
     plt.show()
