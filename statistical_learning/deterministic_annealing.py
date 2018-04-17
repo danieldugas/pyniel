@@ -9,6 +9,14 @@ from numpy_tools.logic import ismin
 
 TINY = 1e-8
 
+def euclidean_distance(a, b, axis=-1):
+    return np.linalg.norm(a-b, axis=axis)
+
+def DKL(p, q, axis=-1):
+    """ KL-divergence, between distributions p and q
+    """
+    return np.sum(p * np.log(TINY + p / (TINY + q)), axis=axis)
+
 class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.TransformerMixin):
     """Template class for DAC
 
@@ -24,11 +32,11 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
         random_state (int): Random seed.
     """
 
-    def __init__(self, n_clusters=8, random_state=42, metric="euclidian", log={}):
+    def __init__(self, n_clusters=8, t_min=0.001, random_state=42, metric=euclidean_distance, log={}):
         self.n_clusters = n_clusters
         self.random_state = random_state
         self.metric = metric
-        self.TMIN = 0.001
+        self.TMIN = t_min
         self.EPS = 1e-2 # convergence tolerance for Lagrangian minimization
         self.MAX_ITER = 1000 # Max iterations for Lagrangian minimization
         self.ALPHA = 0.9
@@ -44,7 +52,7 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
         delta = self.DELTA_SCALE * delta / (np.linalg.norm(delta, axis=-1)[...,None] + TINY)
         return y + delta
 
-    def fit(self, X):
+    def fit(self, X, debug_callback=None):
         """Compute DAC for input vectors X
 
         Preferred implementation of DAC as described in reference [1].
@@ -62,12 +70,7 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
         # Scale delta to the variance of the dataset
         self.DELTA_SCALE = self.DELTA_SCALE * np.sqrt(np.var(X, axis=0))
 
-        if self.metric == "euclidian":
-            def d(a,b, axis):
-                return np.linalg.norm(a-b, axis=axis)
-        else:
-            raise NotImplementedError
-        self.d_ = d
+        d_ = self.metric
 
         px = 1.0/len(X) # equiprobable x
         dd = X - np.mean(X, axis=0)
@@ -89,15 +92,16 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
             n_ef = len(self.cluster_centers_)
             # Optimize at T
             for i in range(self.MAX_ITER):
-                # optimize pyx
+                # optimize pyx (c, x)
                 if T > 0:
-                  pyx = np.exp(-self.d_(clusters[:,None,:],X[None,:,:], axis=-1)/T)# (K, n_x)
+                  pyx = np.exp(-d_(X[None,:,:], clusters[:,None,:], axis=-1)/T)
                 else:
-                  pyx = ismin(self.d_(clusters[:,None,:],X[None,:,:], axis=-1), axis=0).astype(float)
+                  pyx = ismin(d_(X[None,:,:], clusters[:,None,:], axis=-1),
+                              axis=0).astype(float)
                 Zx = np.sum(pyx, axis=0)
                 pyx = pyx / (Zx + TINY)
                 py = np.sum(pyx, axis=1) * px
-                pxy = pyx.T * px / (py + TINY) # (n_x, K)
+                pxy = pyx.T * px / (py + TINY) # (x, c)
                 # optimize y
                 clusters = np.sum(pxy[:,:,None] * X[:,None,:], axis = 0)
                 # convergence check
@@ -106,7 +110,7 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
                 last_F = F
                 # logging
                 if 'distortion' in self.log:
-                    D = np.sum(px * np.sum(pyx * self.d_(X[None,:,:], clusters[:,None,:],
+                    D = np.sum(px * np.sum(pyx * d_(X[None,:,:], clusters[:,None,:],
                                                         axis = -1), axis=0), axis=-1)
                     self.log['distortion'].append(D)
                 if 'temperature' in self.log:
@@ -123,8 +127,10 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
             if len(self.cluster_centers_) < self.n_clusters and T > 0:
                 old, new = np.split(clusters, 2)
                 # New clusters should have diverged from their parent but also from other old clusters
-                divergence = np.min(np.linalg.norm(np.abs(old[None,:,:] - new[:,None,:]) /
-                                                   (self.DELTA_SCALE + TINY), axis=-1), axis=1)
+                divergence = np.min(np.linalg.norm(np.abs(old[None,:,:]
+                                                          - new[:,None,:])
+                                                    / (self.DELTA_SCALE + TINY),
+                                                   axis=-1), axis=1)
                 # New clusters should not be empty
                 empty = (np.sum(pxy, axis=0) == 0)[len(old):]
                 divergence[empty] = 0
@@ -137,13 +143,19 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
                     plt.scatter(X[:,0], X[:,1], c=p)
                     plt.scatter(c[:,0], c[:,1], marker='x', color='red')
 
+                if debug_callback is not None:
+                    debug_callback(T, self)
+                    print(T)
+
                 self.cluster_centers_ = old
                 if np.nanmax(divergence) > 10:
                     if self.DEBUG_PLOT: plt.xlabel('keep')
                     idx = np.argmax(divergence)
                     tag = len(self.cluster_centers_)
-                    self.cluster_centers_ = np.append(self.cluster_centers_, [new[idx]], axis=0)
-                    self.bifurcation_tree_.create_node(tag, tag, parent=idx, data={"T": T})
+                    self.cluster_centers_ = np.append(self.cluster_centers_,
+                                                      [new[idx]], axis=0)
+                    self.bifurcation_tree_.create_node(tag, tag, parent=idx,
+                                                       data={"T": T})
             else:
                 not_empty = np.sum(pxy, axis=0) != 0
                 self.cluster_centers_[not_empty] = clusters[not_empty]
@@ -168,8 +180,9 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
             P (np.ndarray): Assignment probability vectors (new_samples, n_clusters)
         """
         check_is_fitted(self, ["cluster_centers_"])
-        # Your code goes here
-        P = ismin(self.d_(self.cluster_centers_[None,:,:],X[:,None,:], axis=-1), axis=1).astype(float)
+        d_ = self.metric
+        P = ismin(d_(X[:,None,:], self.cluster_centers_[None,:,:], axis=-1),
+                  axis=1).astype(float)
         return P
 
     def transform(self, X):
@@ -186,7 +199,8 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
         check_is_fitted(self, ["cluster_centers_"])
 
         # Your code goes here
-        Y = self.d_(self.cluster_centers_[None,:,:],X[:,None,:], axis=-1)
+        d_ = self.metric
+        Y = d_(self.cluster_centers_[None,:,:],X[:,None,:], axis=-1)
         return Y
 
     def plot_bifurcation(self):
@@ -224,7 +238,6 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
         return fig, ax
 
 if __name__ == '__main__':
-    plt.ion()
     # Generate example data
     centers = np.array([[-1,-1], [-1,1], [1,-1], [1,1], [0,0]])
     X = np.concatenate([np.random.normal(c,0.5, size=(200,2)) for c in centers],
@@ -250,6 +263,4 @@ if __name__ == '__main__':
     ax[1].set_title('Hard DAC clustering')
     ax[1].scatter(X[:,0], X[:,1], c=p)
     ax[1].scatter(c[:,0], c[:,1], marker='x', color='red')
-    plt.show()
     DAC.plot_fit()
-    input()
