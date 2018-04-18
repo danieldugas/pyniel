@@ -17,6 +17,15 @@ def DKL(p, q, axis=-1):
     """
     return np.sum(p * np.log(TINY + p / (TINY + q)), axis=axis)
 
+def example_debug_callback(T, DAC, clusters, X):
+    plt.figure()
+    plt.title(T)
+    c = DAC.cluster_centers_
+    p = np.argmax(DAC.predict(X), axis=-1)
+    plt.scatter(X[:,0], X[:,1], c=p)
+    plt.scatter(c[:,0], c[:,1], marker='x', color='red')
+    plt.pause(0.1)
+
 class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.TransformerMixin):
     """Template class for DAC
 
@@ -41,7 +50,6 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
         self.MAX_ITER = 1000 # Max iterations for Lagrangian minimization
         self.ALPHA = 0.9
         self.DELTA_SCALE = 1e-2
-        self.DEBUG_PLOT = False
         self.log = {key: [] for key in log}
         # Add more parameters, if necessary.
         self.cluster_probabs_ = None
@@ -124,6 +132,7 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
                     break
 
             # Confirm split for most diverged cluster
+            cluster_was_added = False
             if len(self.cluster_centers_) < self.n_clusters and T > 0:
                 old, new = np.split(clusters, 2)
                 # New clusters should have diverged from their parent but also from other old clusters
@@ -135,39 +144,32 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
                 empty = (np.sum(pxy, axis=0) == 0)[len(old):]
                 divergence[empty] = 0
 
-                if self.DEBUG_PLOT:
-                    plt.figure()
-                    plt.title(T)
-                    c = clusters
-                    p = np.argmax(pyx, axis=0)
-                    plt.scatter(X[:,0], X[:,1], c=p)
-                    plt.scatter(c[:,0], c[:,1], marker='x', color='red')
-
-                if debug_callback is not None:
-                    debug_callback(T, self)
-                    print(T)
-
                 self.cluster_centers_ = old
                 if np.nanmax(divergence) > 10:
-                    if self.DEBUG_PLOT: plt.xlabel('keep')
+                    cluster_was_added = True
                     idx = np.argmax(divergence)
                     tag = len(self.cluster_centers_)
                     self.cluster_centers_ = np.append(self.cluster_centers_,
                                                       [new[idx]], axis=0)
                     self.bifurcation_tree_.create_node(tag, tag, parent=idx,
                                                        data={"T": T})
+
             else:
                 not_empty = np.sum(pxy, axis=0) != 0
                 self.cluster_centers_[not_empty] = clusters[not_empty]
+            # Optional debugging
+            if debug_callback is not None:
+                debug_callback(T, self, clusters, X)
+            # Cooldown
+            if not cluster_was_added:
+                T = self.ALPHA * T
             # Exit loop
             if T == 0:
                 break
             #  Check T > Tmin
-            if T <= self.TMIN:
+            if T <= self.TMIN and len(self.cluster_centers_) == self.n_clusters:
                 T = 0
                 continue
-            # Cooldown
-            T = self.ALPHA * T
         return self
 
     def predict(self, X):
@@ -234,7 +236,6 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
         #ax[2].set_yscale("log", nonposy='clip')
         ax[2].set_ylabel("T")
         ax[2].set_xlabel("steps")
-        plt.show()
         return fig, ax
 
 if __name__ == '__main__':
@@ -264,3 +265,4 @@ if __name__ == '__main__':
     ax[1].scatter(X[:,0], X[:,1], c=p)
     ax[1].scatter(c[:,0], c[:,1], marker='x', color='red')
     DAC.plot_fit()
+    plt.show()
