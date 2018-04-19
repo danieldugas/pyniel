@@ -41,14 +41,14 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
         random_state (int): Random seed.
     """
 
-    def __init__(self, n_clusters=8, t_min=0.001, random_state=42, metric=euclidean_distance, log={}):
+    def __init__(self, n_clusters=8, t_decay_rate=0.95, t_min=0.001, random_state=42, metric=euclidean_distance, log={}):
         self.n_clusters = n_clusters
         self.random_state = random_state
         self.metric = metric
         self.TMIN = t_min
         self.EPS = 1e-2 # convergence tolerance for Lagrangian minimization
         self.MAX_ITER = 1000 # Max iterations for Lagrangian minimization
-        self.ALPHA = 0.9
+        self.ALPHA = t_decay_rate
         self.DELTA_SCALE = 1e-2
         self.log = {key: [] for key in log}
         # Add more parameters, if necessary.
