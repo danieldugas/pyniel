@@ -60,7 +60,7 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
         delta = self.DELTA_SCALE * delta / (np.linalg.norm(delta, axis=-1)[...,None] + TINY)
         return y + delta
 
-    def fit(self, X, debug_callback=None):
+    def fit(self, X, debug_callback=None, px=None):
         """Compute DAC for input vectors X
 
         Preferred implementation of DAC as described in reference [1].
@@ -80,9 +80,15 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
 
         d_ = self.metric
 
-        px = 1.0/len(X) # equiprobable x
+        if px is None:
+            px = 1.0/len(X) # equiprobable x
+            px_2d = px
+            px_3d = px
+        else:
+            px_2d = px[:,None]
+            px_3d = px[:,None,None]
         dd = X - np.mean(X, axis=0)
-        Cx = np.sum(px * np.matmul(dd[:,:,None], dd[:,None,:]), axis=0)
+        Cx = np.sum(px_3d * np.matmul(dd[:,:,None], dd[:,None,:]), axis=0)
         l, _ = np.linalg.eig(Cx)
         T0 = T = np.sqrt(np.max(l)/2) # dirty and wrong but works?
 
@@ -108,8 +114,8 @@ class DeterministicAnnealingClustering(skl.base.BaseEstimator, skl.base.Transfor
                               axis=0).astype(float)
                 Zx = np.sum(pyx, axis=0)
                 pyx = pyx / (Zx + TINY)
-                py = np.sum(pyx, axis=1) * px
-                pxy = pyx.T * px / (py + TINY) # (x, c)
+                py = np.sum(pyx * px, axis=1)
+                pxy = pyx.T * px_2d / (py + TINY) # (x, c)
                 # optimize y
                 clusters = np.sum(pxy[:,:,None] * X[:,None,:], axis = 0)
                 # convergence check
