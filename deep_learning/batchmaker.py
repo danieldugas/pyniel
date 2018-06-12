@@ -2,12 +2,14 @@ import numpy as np
 
 # TODO: pregenerate batches, etc...
 
+
 def basic_extractor(input_data, pos):
     """
     A basic extractor for extracting values from the input_data
     provided as an example.
     """
     return input_data[pos]
+
 
 class Batchmaker:
     """
@@ -17,8 +19,15 @@ class Batchmaker:
     and are extracted from the input_data according to extractor_func.
     In the simplest case the extractor function takes the form of basic_extractor.
     """
-    def __init__(self, input_data, examples_per_batch, example_shape,
-                 shuffle_examples=True, extractor_func=basic_extractor):
+
+    def __init__(
+        self,
+        input_data,
+        examples_per_batch,
+        example_shape,
+        shuffle_examples=True,
+        extractor_func=basic_extractor,
+    ):
         self.input_data = input_data
         self.example_shape = example_shape
         self.extractor_func = extractor_func
@@ -27,7 +36,9 @@ class Batchmaker:
             examples_per_batch = len(input_data)
         assert type(examples_per_batch) is int
         if examples_per_batch > len(input_data):
-            print("WARNING: more examples per batch than possible examples in all input_data")
+            print(
+                "WARNING: more examples per batch than possible examples in all input_data"
+            )
             self.examples_per_batch = len(input_data)
         else:
             self.examples_per_batch = examples_per_batch
@@ -36,19 +47,21 @@ class Batchmaker:
         # shuffle list if required
         if shuffle_examples:
             from random import shuffle
+
             shuffle(self.remaining_example_indices)
         self.batches_consumed_counter = 0
 
     def next_batch(self):
         assert not self.is_depleted()
         # Create a single batch
-        batch_input_values  =  np.zeros([self.examples_per_batch] + self.example_shape)
+        batch_input_values = np.zeros([self.examples_per_batch] + self.example_shape)
         for i_example in range(self.examples_per_batch):
-          # Create training example at index 'pos' in input_data.
-          pos = self.remaining_example_indices.pop(0)
-          #   input.
-          batch_input_values[i_example] = np.reshape(self.extractor_func(self.input_data, pos),
-                                                     self.example_shape)
+            # Create training example at index 'pos' in input_data.
+            pos = self.remaining_example_indices.pop(0)
+            #   input.
+            batch_input_values[i_example] = np.reshape(
+                self.extractor_func(self.input_data, pos), self.example_shape
+            )
 
         self.batches_consumed_counter += 1
 
@@ -62,6 +75,7 @@ class Batchmaker:
 
     def n_batches_consumed(self):
         return self.batches_consumed_counter
+
 
 class FieldBatchmaker(Batchmaker):
     """
@@ -86,8 +100,10 @@ class FieldBatchmaker(Batchmaker):
 
     In the simplest case an extractor function takes the form of basic_extractor(input_data, pos).
     """
-    def __init__(self, input_data, examples_per_batch, fields_format,
-                 shuffle_examples=True):
+
+    def __init__(
+        self, input_data, examples_per_batch, fields_format, shuffle_examples=True
+    ):
         self.input_data = input_data
         self.fields_format = fields_format
         # examples per batch
@@ -95,7 +111,9 @@ class FieldBatchmaker(Batchmaker):
             examples_per_batch = len(input_data)
         assert type(examples_per_batch) is int
         if examples_per_batch > len(input_data):
-            print("WARNING: more examples per batch than possible examples in all input_data")
+            print(
+                "WARNING: more examples per batch than possible examples in all input_data"
+            )
             self.examples_per_batch = len(input_data)
         else:
             self.examples_per_batch = examples_per_batch
@@ -104,21 +122,26 @@ class FieldBatchmaker(Batchmaker):
         # shuffle list if required
         if shuffle_examples:
             from random import shuffle
+
             shuffle(self.remaining_example_indices)
         self.batches_consumed_counter = 0
 
     def next_batch(self):
         assert not self.is_depleted()
-        batch = {field_name: np.zeros((self.examples_per_batch,) + field['shape'])
-                 for field_name, field in self.fields_format.items()}
+        batch = {
+            field_name: np.zeros((self.examples_per_batch,) + field["shape"])
+            for field_name, field in self.fields_format.items()
+        }
         # Create a single batch
         for i_example in range(self.examples_per_batch):
-          # Create training example at index 'pos' in input_data.
-          pos = self.remaining_example_indices.pop(0)
-          #   fill values for each field
-          for field_name, field in self.fields_format.items():
-            batch[field_name][i_example] = field['extractor_func'](self.input_data, pos)
-            assert batch[field_name][i_example].shape == field['shape']
+            # Create training example at index 'pos' in input_data.
+            pos = self.remaining_example_indices.pop(0)
+            #   fill values for each field
+            for field_name, field in self.fields_format.items():
+                batch[field_name][i_example] = field["extractor_func"](
+                    self.input_data, pos
+                )
+                assert batch[field_name][i_example].shape == field["shape"]
 
         self.batches_consumed_counter += 1
 
