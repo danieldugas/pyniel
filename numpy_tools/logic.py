@@ -1,8 +1,10 @@
 import warnings
 import numpy as np
+
 """ Logic tools
 Daniel Dugas
 """
+
 
 def equals(tuple_of_arrays):
     """ Apply == operator to multiple arrays.
@@ -38,10 +40,10 @@ def equals(tuple_of_arrays):
     if len(tuple_of_arrays) <= 1:
         warnings.warn("Expected more than 1 array for logical comparison.")
         return truth_value
-    for array1, array2 in zip(tuple_of_arrays[:-1],
-                              tuple_of_arrays[1:]):
+    for array1, array2 in zip(tuple_of_arrays[:-1], tuple_of_arrays[1:]):
         truth_value = np.logical_and(truth_value, array1 == array2)
     return truth_value
+
 
 def generic_is(a, axis, generic, generic_checker=None):
     """ generic function for ismin, ismax
@@ -112,23 +114,29 @@ def generic_is(a, axis, generic, generic_checker=None):
         index.insert(axis, targets.flatten())
         index = tuple(index)
         if generic_checker is not None:
-            assert np.all(np.sort(a[index]) ==
-                          np.sort(generic_checker(a, axis=axis).flatten()))
+            assert np.all(
+                np.sort(a[index]) == np.sort(generic_checker(a, axis=axis).flatten())
+            )
         result[index] = 1
     if generic_checker is not None:
         assert np.all(np.sum(result, axis=axis) == 1)
     return result.astype(bool)
 
+
 def ismin(a, axis=None):
     """ see generic_is()
     """
     return generic_is(a, axis=axis, generic=np.argmin)
+
+
 def ismax(a, axis=None):
     """ see generic_is()
     """
     return generic_is(a, axis=axis, generic=np.argmax)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import doctest
+
     np.random.seed(42)
     doctest.testmod()
