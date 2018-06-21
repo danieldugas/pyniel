@@ -1,10 +1,13 @@
 import numpy as np
 from indexing import as_idx, filter_invalid_idx
 
+
 def resize_with_zeros(a, shape):
     """ special case of resize_with_fill where fill_value is 0
     """
     return resize_with_fill(a, shape, fill_value=0)
+
+
 def resize_with_fill(a, shape, fill_value=np.nan):
     """ returns a, resized to shape, filling blanks with zeros
 
@@ -39,13 +42,16 @@ def resize_with_fill(a, shape, fill_value=np.nan):
            [nan, nan, nan, nan]])
     """
     if len(shape) != len(a.shape):
-        raise ValueError("Expected new shape to have as many dimensions as "\
-                         "old shape. Reshape to desired number of dimensions "\
-                         "before calling resize_with_fill")
+        raise ValueError(
+            "Expected new shape to have as many dimensions as "
+            "old shape. Reshape to desired number of dimensions "
+            "before calling resize_with_fill"
+        )
     resized = np.full(shape, fill_value=fill_value)
     idx = filter_invalid_idx(as_idx(a), resized)
     resized[idx] = a[idx]
     return resized
+
 
 def from_list_of_lists(l, fill_value=np.nan):
     """ fill a list of lists with fill_value until all sublists are same size,
@@ -85,15 +91,18 @@ def from_list_of_lists(l, fill_value=np.nan):
             [nan]]])
     """
     if isinstance(l[0][0], list) and not isinstance(fill_value, list):
-        errorstring = ("fill_value must be the same type as items in the "\
-                       "sublist. Here items in the sublist are lists of size "\
-                       "{}, for example: {}. fill_value must also be a list "\
-                       "of size {}.").format(str(len(l[0][0])), str(l[0][0]),
-                                             str(len(l[0][0])))
+        errorstring = (
+            "fill_value must be the same type as items in the "
+            "sublist. Here items in the sublist are lists of size "
+            "{}, for example: {}. fill_value must also be a list "
+            "of size {}."
+        ).format(str(len(l[0][0])), str(l[0][0]), str(len(l[0][0])))
         raise ValueError(errorstring)
     length = len(sorted(l, key=len, reverse=True)[0])
-    return np.array([list(li)+[fill_value]*(length-len(li)) for li in l])
+    return np.array([list(li) + [fill_value] * (length - len(li)) for li in l])
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import doctest
+
     doctest.testmod()

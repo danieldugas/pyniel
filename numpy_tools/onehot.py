@@ -1,6 +1,7 @@
 import numpy as np
 from numpy_tools.indexing import as_idx
 
+
 def one_hot(labels, depth, on_value=1.0, off_value=0.0):
     """ Takes an numpy array and replaces the last axis with a one_hot encoding
     Daniel Dugas
@@ -39,6 +40,7 @@ def one_hot(labels, depth, on_value=1.0, off_value=0.0):
     switch_on = as_idx(a) + (np.array(a).astype(np.intp).flatten(),)
     one_hot[switch_on] = on_value
     return one_hot
+
 
 def softmax(y, axis=-1):
     """ softmax function in numpy

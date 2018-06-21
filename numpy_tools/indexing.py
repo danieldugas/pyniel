@@ -1,8 +1,10 @@
 import warnings
 import numpy as np
+
 """ Index tools
 Daniel Dugas
 """
+
 
 def as_idx_array(a, axis=None):
     """ Returns an array of shape a containing indices for a
@@ -54,9 +56,10 @@ def as_idx_array(a, axis=None):
     if axis is None:
         return np.arange(len(a.flatten())).reshape(a.shape)
     idxs = np.array(np.where(np.ones(a.shape))).T.reshape(a.shape + (-1,))
-    if axis == 'all':
+    if axis == "all":
         return idxs
     return idxs[..., axis]
+
 
 def as_idx(a):
     """ returns a tuple with indices for all values in a
@@ -85,6 +88,7 @@ def as_idx(a):
     True
     """
     return np.where(np.ones(a.shape))
+
 
 def filter_invalid_idx(idx, array, ignore_extra_dimensions=False):
     """ removes indices from idx which do not point to a location in array
@@ -118,18 +122,20 @@ def filter_invalid_idx(idx, array, ignore_extra_dimensions=False):
     """
     if not ignore_extra_dimensions:
         if len(array.shape) < len(idx):
-            warnings.warn("Indices point to more dimensions than exist in "\
-                          "array. Default behavior is to flag them all as "\
-                          "invalid. Set ignore_extra_dimensions to True to "\
-                          "reduce strictness. Otherwise ensure that the "\
-                          "dimensionalities match.")
+            warnings.warn(
+                "Indices point to more dimensions than exist in "
+                "array. Default behavior is to flag them all as "
+                "invalid. Set ignore_extra_dimensions to True to "
+                "reduce strictness. Otherwise ensure that the "
+                "dimensionalities match."
+            )
             return tuple()
-    maxdim = min(len(array.shape), len(idx)) # larger dimensions are irrelevant
-    max_idx = np.array(array.shape[:maxdim]) - 1 # max index for each axis
+    maxdim = min(len(array.shape), len(idx))  # larger dimensions are irrelevant
+    max_idx = np.array(array.shape[:maxdim]) - 1  # max index for each axis
     test = np.array(idx[:maxdim]).T
-    is_valid = np.all(np.logical_and(test <= max_idx, test >= -1-max_idx),
-                      axis=-1)
+    is_valid = np.all(np.logical_and(test <= max_idx, test >= -1 - max_idx), axis=-1)
     return tuple(test[is_valid].T)
+
 
 def sliding_window(a, size=3, fill_value=np.nan):
     """ Applies a sliding window of shape size^a_ndim to array a,
@@ -139,10 +145,17 @@ def sliding_window(a, size=3, fill_value=np.nan):
     in which the first dimension corresponds to value of a for each flat index
     in the window."""
     # We generate pad_widths for each
-    paddings = np.array(np.where(np.ones((size,)*a.ndim))).T[:,:,None] * [1, -1] + [0, size-1]
-    paddeds = np.array([np.pad(a, pad, 'constant', constant_values=fill_value) for pad in paddings])
-    return paddeds[:, size//2:-(size//2), size//2:-(size//2)]
+    paddings = np.array(np.where(np.ones((size,) * a.ndim))).T[:, :, None] * [1, -1] + [
+        0,
+        size - 1,
+    ]
+    paddeds = np.array(
+        [np.pad(a, pad, "constant", constant_values=fill_value) for pad in paddings]
+    )
+    return paddeds[:, size // 2 : -(size // 2), size // 2 : -(size // 2)]
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import doctest
+
     doctest.testmod()
