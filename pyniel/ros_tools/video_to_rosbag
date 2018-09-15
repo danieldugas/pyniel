@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+import time, sys, os
+from ros import rosbag
+import roslib, rospy
+roslib.load_manifest('sensor_msgs')
+from sensor_msgs.msg import Image
+
+from cv_bridge import CvBridge
+import cv2
+
+NAME = "camera"
+TOPIC = NAME+'/image_raw'
+FRAME_ID = NAME
+
+def string_to_path(string):
+  return os.path.abspath(os.path.expanduser(os.path.expandvars(string)))
+
+def CreateVideoBag(videopath, bagname):
+    '''Creates a bag file with a video file'''
+    bag = rosbag.Bag(string_to_path(bagname), 'w')
+    cap = cv2.VideoCapture(string_to_path(videopath))
+    cb = CvBridge()
+    prop_fps = cap.get(cv2.CAP_PROP_FPS)
+    print("fps: {}".format(prop_fps))
+    length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    if prop_fps != prop_fps or prop_fps <= 1e-2:
+        print "Warning: can't get FPS. Assuming 24."
+        prop_fps = 24
+    ret = True
+    frame_id = 0
+    while(ret):
+        if frame_id > length: 
+            break
+        ret, frame = cap.read()
+        if not ret:
+            break
+        stamp = rospy.rostime.Time.from_sec(float(frame_id) / prop_fps)
+        # drop frames.
+#         if frame_id % 3 == 0: # drop (3-1=)2 / 3 frames
+#         if not ( frame_id % 3 ) == 0: # drop 1 / 3 frames
+        if True:
+            sys.stdout.write("\rframe {}/{}".format(frame_id, length))
+            sys.stdout.flush()
+            image = cb.cv2_to_imgmsg(frame, encoding='bgr8')
+            image.header.stamp = stamp
+            image.header.frame_id = FRAME_ID
+            bag.write(TOPIC, image, stamp)
+        frame_id += 1
+    cap.release()
+    bag.close()
+    print("")
+    print("Done.")
+
+if __name__ == "__main__":
+    if len( sys.argv ) == 3:
+        CreateVideoBag(*sys.argv[1:])
+    else:
+        print( "Usage: video_to_rosbag videofilename bagfilename")
