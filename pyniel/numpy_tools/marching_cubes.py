@@ -1,7 +1,9 @@
+# github.com/danieldugas/pyniel
+# based on "Polygonising a scalar field" by Paul Bourke
 import numpy as np
 
 
-def marching_cubes(voxelgrid, thresh=0.5, global_vertices=[], global_triangles=[]):
+def marching_cubes(voxelgrid, thresh=0.5, global_vertices=None, global_triangles=None):
     """ Marching cubes algorithm, computes surface mesh from a 3D voxel field.
     
     Parameters
@@ -25,14 +27,20 @@ def marching_cubes(voxelgrid, thresh=0.5, global_vertices=[], global_triangles=[
 
     Example
     -------
-    >>> a = np.ones((2,2))
-    >>> a
-    array([[1., 1.],
-           [1., 1.]])
-    >>> histogram_along_axis(a, bins=4, axis=0)
-    (array([[0, 0, 2, 0],
-           [0, 0, 2, 0]]), array([0.5 , 0.75, 1.  , 1.25, 1.5 ]))
+    >>> vg = np.array([[[[0. , 1. , 0. , 0. ], [0. , 1. , 1.5, 0. ]], [[0. , 2. , 0. , 2. ], [0. , 2. , 1.5, 0. ]]], [[[1.5, 1. , 0. , 1. ], [1.5, 1. , 1.5, 1. ]], [[1.5, 2. , 0. , 1. ], [1.5, 2. , 1.5, 1. ]]]])
+    >>> vertices, triangles = marching_cubes(vg)
+    >>> np.array(vertices)
+    array([[0.   , 1.75 , 0.   ],
+           [0.75 , 2.   , 1.5  ],
+           [0.   , 2.   , 0.375],
+           [0.75 , 1.   , 0.   ],
+           [0.75 , 1.   , 1.5  ]])
+    >>> triangles
+    [[0, 1, 2], [0, 3, 1], [3, 4, 1]]
     """
+    if global_vertices is None or global_triangles is None:
+        global_vertices = []
+        global_triangles = []
     # preset_edges_vert_id tells each voxel which of its 12 edges already has a triangle vertice.
     # during a single voxel iteration, new edge vertices are propagated to neighbor voxels.
     preset_edges_vert_id = -np.ones((
@@ -430,3 +438,8 @@ def plotting_example():
     ax.plot_trisurf(triang, z, cmap=plt.cm.CMRmap)
     ax.scatter(pointcloud[:,0], pointcloud[:,1], pointcloud[:,2])
     plt.show()
+
+if __name__ == "__main__":
+    import doctest
+
+    doctest.testmod()

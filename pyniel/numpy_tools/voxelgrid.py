@@ -1,3 +1,4 @@
+# github.com/danieldugas/pyniel
 import numpy as np
 
 def pointcloud_to_voxelgrid(pointcloud, gridsize=24, n_spatial_dims=None, return_indices=False):
