@@ -5,7 +5,7 @@ import numpy as np
 
 def marching_cubes(voxelgrid, thresh=0.5, global_vertices=None, global_triangles=None):
     """ Marching cubes algorithm, computes surface mesh from a 3D voxel field.
-    
+
     Parameters
     ----------
     voxelgrid : array_like
@@ -87,7 +87,10 @@ def marching_cubes(voxelgrid, thresh=0.5, global_vertices=None, global_triangles
                     else:
                       new_vertice_id = len(global_vertices)
                       # find vertice xyz (interpolate)
-                      xyzo = vertices[edgevertices[edge]] 
+                      # x_interp = x_1  (     t - f(x_2))  + x_2 (     t - f(x_1))
+                      #                 (f(x_1) - f(x_2))        (f(x_2) - f(x_1))
+
+                      xyzo = vertices[edgevertices[edge]]
                       xyz = xyzo[:,:3]
                       o = xyzo[:,3]
                       interp = (thresh - o) / (o[::-1] - o)

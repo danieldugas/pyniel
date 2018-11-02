@@ -75,7 +75,7 @@ def pointcloud_to_voxelgrid(pointcloud, gridsize=24, n_spatial_dims=None, return
     xyzmax = pointcloud[:,:n_spatial_dims].max(axis=0)
     dxyz = (xyzmax - xyzmin) / gridsize
     # Transform x y z ... to integer indices, normalizing axes
-    ijk = ((pointcloud[:,:n_spatial_dims] - xyzmin) / (xyzmax - xyzmin) * gridsize).astype(int)
+    ijk = ((pointcloud[:,:n_spatial_dims] - xyzmin) / dxyz).astype(int)
     # points at the border of the last voxels should be put in the last voxels
     out_of_range = (ijk == gridsize)
     ijk[out_of_range] -= 1
