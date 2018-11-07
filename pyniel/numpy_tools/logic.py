@@ -29,12 +29,12 @@ def equals(tuple_of_arrays):
     >>> equals((A, B, C))
     array([[False,  True, False],
            [False, False,  True],
-           [False, False,  True]])
+           [False, False,  True]], dtype=bool)
     >>> D = np.array([0, 0 ,0])
     >>> equals((A, B, C, D))
     array([[False, False, False],
            [False, False, False],
-           [False, False,  True]])
+           [False, False,  True]], dtype=bool)
     """
     truth_value = np.ones(tuple_of_arrays[0].shape)
     if len(tuple_of_arrays) <= 1:
@@ -92,7 +92,7 @@ def generic_is(a, axis, generic, generic_checker=None):
     >>> generic_is(a, 0, np.argmax, np.max)
     array([[False, False, False],
            [False, False,  True],
-           [ True,  True, False]])
+           [ True,  True, False]], dtype=bool)
 
     as mentioned in the notes:
     >>> a[ismax(a,axis=0)]
@@ -134,6 +134,27 @@ def ismax(a, axis=None):
     """
     return generic_is(a, axis=axis, generic=np.argmax)
 
+
+def absmaximum(a, b):
+    """ Elementwise maximum values from
+    two equally shaped arrays a and b
+
+    The value picked for each element is that with
+    the largest absolute value.
+
+    If the absolute values for an element are equal but
+    of different signs, the sign for a is picked.
+
+    Example
+    -------
+    >>> a = np.array([[-1, 0, 1], [ 2, -2, 0], [0,  3, -3]])
+    >>> b = np.array([[ 3, 0,-3], [-1,  1, 0], [0, -2,  2]])
+    >>> absmaximum(a, b)
+    array([[ 3,  0, -3],
+           [ 2, -2,  0],
+           [ 0,  3, -3]])
+    """
+    return a * (np.abs(a) >= np.abs(b)) + b * (np.abs(b) > np.abs(a))
 
 if __name__ == "__main__":
     import doctest
