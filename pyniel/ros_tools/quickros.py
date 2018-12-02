@@ -3,6 +3,8 @@
 import functools
 
 import rospy
+import tf
+from tf2_ros import TransformException
 from sensor_msgs.msg import *
 from std_msgs.msg import *
 import numpy as np
@@ -11,7 +13,8 @@ import sys
 
 class QuickSubscriber(object):
     """ Quickly extracts messages """
-    def __init__(self, topic_name=None, msg_class=Image, n_messages=1, verbose=False):
+    def __init__(self, topic_name=None, msg_class=Image, n_messages=1, verbose=False,
+            tf_parent_frame=None, tf_timeout=1., tf_skip_if_no_tf=True):
         if topic_name is None:
             print("Usage: q = QuickSubscriber(topic_name, msg_class ,n_messages(default=1), verbose(default=False))")
             raise Exception()
@@ -21,8 +24,10 @@ class QuickSubscriber(object):
         self.n_messages = n_messages
         self.topic_name = topic_name
         self.VERBOSE = verbose
-        self.TF_LISTENER = False
-        if self.TF_LISTENER:
+        self.TF_PARENT_FRAME = tf_parent_frame
+        self.tf_timeout = rospy.Duration(tf_timeout)
+        self.tf_skip_if_tf_not_found = tf_skip_if_no_tf
+        if self.TF_PARENT_FRAME is not None:
             self.tfs = []
             self.tf_listener = tf.TransformListener()
         print("Waiting for {} messages on topic {}".format(self.n_messages, self.topic_name))
@@ -30,19 +35,29 @@ class QuickSubscriber(object):
 
     def callback(self, msg):
         verbose_msg_info = ": {}".format(msg) if self.VERBOSE else ""
-        rospy.loginfo("Captured message {}/{}{}".format(len(self.messages),
+        rospy.loginfo("Captured message {}/{}{}".format(len(self.messages)+1,
                                                           self.n_messages,
                                                           verbose_msg_info));
-        self.messages.append(msg)
-        if self.TF_LISTENER:
+        if self.TF_PARENT_FRAME is not None:
             try:
-                time = rospy.Time(0)
-                tf = self.tf_listener.lookupTransform(self.frame1, self.frame2, time)
-                self.tfs.append(tf)
-            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                print("tf for time {} not found".format(time))
+                time = rospy.Time(msg.header.stamp.secs, msg.header.stamp.nsecs)
+                tf_info = [self.TF_PARENT_FRAME, msg.header.frame_id, time]
+                self.tf_listener.waitForTransform(*(tf_info + [self.tf_timeout]))
+                tf_ = self.tf_listener.lookupTransform(*tf_info)
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException,
+                    TransformException) as e:
+                print("tf for time {} not found: {}".format(time, e))
+                if self.tf_skip_if_tf_not_found:
+                    print("Skipping message.")
+                    return
+                else:
+                    tf_ = None
+            self.tfs.append(tf_)
+        self.messages.append(msg)
         if len(self.messages) >= self.n_messages:
             print("Collected all messages. Messages stored in QuickSubscriber.messages")
+            if self.TF_PARENT_FRAME is not None:
+                print("tfs stored in QuickSubscriber.tfs")
             rospy.signal_shutdown("Mission accomplished.")
 
 class QuickMultiSubscriber(object):
