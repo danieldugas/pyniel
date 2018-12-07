@@ -154,6 +154,12 @@ def sliding_window(a, size=3, fill_value=np.nan):
     )
     return paddeds[:, size // 2 : -(size // 2), size // 2 : -(size // 2)]
 
+def filter_if_out_of_bounds(indices_list, a):
+    valid_mask = np.all(
+            np.logical_and(indices_list >= 0, indices_list < a.shape),
+            axis=-1,
+            )
+    return indices_list[valid_mask]
 
 if __name__ == "__main__":
     import doctest
