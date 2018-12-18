@@ -156,6 +156,27 @@ def absmaximum(a, b):
     """
     return a * (np.abs(a) >= np.abs(b)) + b * (np.abs(b) > np.abs(a))
 
+def absminimum(a, b):
+    """ Elementwise minimum values from
+    two equally shaped arrays a and b
+
+    The value picked for each element is that with
+    the smallest absolute value.
+
+    If the absolute values for an element are equal but
+    of different signs, the sign for a is picked.
+
+    Example
+    -------
+    >>> a = np.array([[-1, 0, 1], [ 2, -2, 0], [0,  3, -3]])
+    >>> b = np.array([[ 3, 0,-3], [-1,  1, 0], [0, -2,  2]])
+    >>> absminimum(a, b)
+    array([[-1,  0,  1],
+           [-1,  1,  0],
+           [ 0, -2,  2]])
+    """
+    return a * (np.abs(a) <= np.abs(b)) + b * (np.abs(b) < np.abs(a))
+
 if __name__ == "__main__":
     import doctest
 
