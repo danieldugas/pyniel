@@ -161,6 +161,21 @@ def filter_if_out_of_bounds(indices_list, a):
             )
     return indices_list[valid_mask]
 
+def batchsplit(x, batchsize, axis=0):
+    """ similar to np.split, but takes a batch size instead of a 
+    number of splits as input
+    """
+    if axis != 0:
+        raise NotImplementedError
+    n_full_sections =  int(np.floor(len(x) / batchsize))
+    if n_full_sections == 0:
+        return [x]
+    indices = [n * batchsize for n in range(1, n_full_sections+1)]
+    sections = np.split(x, indices, axis=axis)
+    if len(sections[-1]) == 0:
+        sections = sections[:-1]
+    return sections
+
 if __name__ == "__main__":
     import doctest
 
