@@ -1,5 +1,4 @@
-from distutils.core import setup
-import os
+from setuptools import setup, find_packages
 
 
 setup(
@@ -7,5 +6,5 @@ setup(
     description='Python tools for Yours Truly',
     author='Daniel Dugas',
     version='1.0',
-    packages=['pyniel'],
+    packages=find_packages(),
 )
