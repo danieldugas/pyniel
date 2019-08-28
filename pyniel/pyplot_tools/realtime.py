@@ -13,6 +13,8 @@ def plotpause(interval):
             return
 
 def plotshow():
+    """ Equivalent of plt.show(), however does not force focus on windows 
+    and should exit on ctrl-c """
     plt.show()
     interval = 0.01
     try:
