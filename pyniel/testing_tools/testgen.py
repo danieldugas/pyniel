@@ -24,6 +24,8 @@ def freeze_test_case(func, args, kwargs={}, folder="./", case_name="testcase", o
     filepath = os.path.join(folder, case_name + '.pickle')
     with open(filepath, 'wb') as f:
         pickle.dump(data, f)
+    print("Tests result saved to {}".format(filepath))
+    return outputs, filepath
 
 def load_test_case(folder="./", case_name="testcase"):
     folder = os.path.expandvars(os.path.expanduser(folder))
