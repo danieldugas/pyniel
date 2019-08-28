@@ -1,7 +1,7 @@
 import pickle
 import os
 
-def freeze_test_case(func, args, kwargs={}, folder="./", case_name="testcase"):
+def freeze_test_case(func, args, kwargs={}, folder="./", case_name="testcase", omit_input=False):
     """ Automated storage of test cases
 
     Takes an input, and function
@@ -13,6 +13,10 @@ def freeze_test_case(func, args, kwargs={}, folder="./", case_name="testcase"):
     # generate reference test output
     outputs = func(*args, **kwargs)
 
+    # omit inputs if desired (for example if they should be loaded separately and are memory-heavy)
+    if omit_input:
+        args = 'omitted'
+        kwargs = 'omitted'
     # save inputs and outputs to file
     data = {'args':args, 'kwargs':kwargs, 'outputs':outputs, 'funcname':func.__name__}
 
