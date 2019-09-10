@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import copy
 import matplotlib.pyplot as plt
@@ -21,7 +22,6 @@ class GraphCreatorGui(object):
         self.nodes = {} # {id: (edges, coords) }
         self.freeids = {0}
         self.selected = None
-        self.latest = None
 
     def run(self):
         if self.fig is None:
@@ -55,19 +55,11 @@ class GraphCreatorGui(object):
                     self.selected = clickednode
                 else:
                     if self.debug:
-                        print("Adding node connected to latest")
-                    if self.latest is None:
-                        # add first node in graph
-                        newid = self.freeids.pop()
-                        self.nodes[newid] = Node(edges=set(), coords=np.array([ix, iy]))
-                        self.latest = newid
-                    else:
-                        # add new node connected to self.latest
-                        newid = self.freeids.pop() if self.freeids else sorted(list(self.nodes))[-1]+1
-                        self.nodes[newid] = Node(edges={self.latest}, coords=np.array([ix, iy]))
-                        # add link with self.latest
-                        self.nodes[self.latest].edges.add(newid)
-                        self.latest = newid
+                        print("Adding new node and selecting it")
+                    # add new node
+                    newid = self.freeids.pop() if self.freeids else sorted(list(self.nodes))[-1]+1
+                    self.nodes[newid] = Node(edges=set(), coords=np.array([ix, iy]))
+                    self.selected = newid
             else:
                 if clickednode is not None:
                     if clickednode == self.selected:
@@ -92,9 +84,10 @@ class GraphCreatorGui(object):
                     # add new node connected to self.selected
                     newid = self.freeids.pop() if self.freeids else sorted(list(self.nodes))[-1]+1
                     self.nodes[newid] = Node(edges={self.selected}, coords=np.array([ix, iy]))
-                    self.latest = newid
                     # add link between self.selected and new node
                     self.nodes[self.selected].edges.add(newid)
+                    # update selection
+                    self.selected = newid
         elif is_rightclick:
                 if clickednode is not None:
                     if self.debug:
@@ -105,11 +98,6 @@ class GraphCreatorGui(object):
                     self.nodes.pop(clickednode)
                     self.freeids.add(clickednode)
                     self.selected = None
-                    if self.latest == clickednode:
-                        if self.nodes:
-                            self.latest = list(self.nodes)[-1]
-                        else:
-                            self.latest = None
                 else:
                     if self.debug:
                         print("Unselecting node")
@@ -118,9 +106,9 @@ class GraphCreatorGui(object):
             return
 
         if self.debug:
+            print(event)
             print("freeids:", self.freeids)
             print("newid:", newid)
-            print("latest:", self.latest)
             print("selected:", self.selected)
             print("clicked:", clickednode)
             print("nodes:", self.nodes)
