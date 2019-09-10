@@ -33,9 +33,13 @@ class GraphCreatorGui(object):
 
     def onclick(self, event):
         is_leftclick = event.button == 1
+        is_middleclick = event.button == 2
         is_rightclick = event.button == 3
         ix, iy = event.xdata, event.ydata
         if ix is None or iy is None:
+            if self.debug:
+                print("invalid click")
+                print(event)
             return
         # Find if an existing node is under the click
         clickednode = None
@@ -102,8 +106,11 @@ class GraphCreatorGui(object):
                     if self.debug:
                         print("Unselecting node")
                     self.selected = None
-        else:
-            return
+        elif is_middleclick:
+                if clickednode is not None:
+                    if self.debug:
+                        print("Selecting node")
+                    self.selected = clickednode
 
         if self.debug:
             print(event)
