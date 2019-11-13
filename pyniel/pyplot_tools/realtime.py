@@ -1,5 +1,6 @@
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Button
 
 def plotpause(interval):
     backend = plt.rcParams['backend']
@@ -29,3 +30,13 @@ def plotshow():
                     canvas.start_event_loop(interval)
     except KeyboardInterrupt:
         print("KeyboardInterrupt received, exiting wait loop.")
+
+def button_callback(event):
+    print("Closing all windows")
+    plt.close('all')
+def plot_closeall_button():
+    fig = plt.figure("closeall_button")
+    plt.plot([0], [0])
+    bca = Button(plt.gca(), 'Close All', color=(1., 0.8, 0.8, 1))
+    cid = fig.canvas.mpl_connect('button_press_event', button_callback)
+
