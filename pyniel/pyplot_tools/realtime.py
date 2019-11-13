@@ -2,6 +2,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 
+keeps_these_objects_away_from_the_gc = []
+
 def plotpause(interval):
     backend = plt.rcParams['backend']
     if backend in matplotlib.rcsetup.interactive_bk:
@@ -35,8 +37,12 @@ def button_callback(event):
     print("Closing all windows")
     plt.close('all')
 def plot_closeall_button():
+    """ If the returned button object is not collected somewhere,
+    it will be GCed and the button unresponsive. """
     fig = plt.figure("closeall_button")
-    plt.plot([0], [0])
-    bca = Button(plt.gca(), 'Close All', color=(1., 0.8, 0.8, 1))
-    cid = fig.canvas.mpl_connect('button_press_event', button_callback)
+    ax = plt.axes()
+    bca = Button(ax, 'Close All', color=(1., 0.8, 0.8, 1))
+    bca.on_clicked(button_callback)
+    keeps_these_objects_away_from_the_gc.append(bca)
+    return bca
 
