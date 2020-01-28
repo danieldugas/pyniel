@@ -28,14 +28,16 @@ class RosbagEndDetector(object):
             self.latest_rostime = rospy.Time.now()
         else:
             rostime = rospy.Time.now()
-            if rostime-self.latest_rostime <= rospy.Duration(0.05):
+            if (rostime-self.latest_rostime) <= rospy.Duration(0.05):
                 if self.rosbag_started:
                     rospy.logwarn("Rosbag end/pause detected!")
                     self.rosbag_end_callback()
                     return
-                else:
+            else:
+                if not self.rosbag_started:
                     rospy.logwarn("Rosbag started, enabling end detector.")
                     self.rosbag_started = True
+                    self.rosbag_start_callback()
             self.latest_rostime = rostime
         threading.Timer(1, self.check_every_s).start()
 
