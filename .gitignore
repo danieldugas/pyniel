@@ -12,6 +12,7 @@ build/
 *.so
 *.pyc
 *.egg-info/
+*.egg
 
 # Packages #
 ############

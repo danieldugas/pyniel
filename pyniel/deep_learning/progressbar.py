@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from matplotlib import pyplot as plt
 import time
 from math import floor
