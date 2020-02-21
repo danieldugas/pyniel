@@ -42,10 +42,10 @@ class WalltimeRate(object):
             if sleep:
                 time.sleep(time_to_next)
                 self.last_time += time_to_next
-                return time_to_next
+            return time_to_next
 
     def remaining(self):
-        return self._time_to_next(sleep=False)
+        return self._time_to_next_and_sleep(sleep=False)
 
     def sleep(self):
         return (self._time_to_next_and_sleep(sleep=True) == 0)
