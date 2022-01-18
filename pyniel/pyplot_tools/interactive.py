@@ -57,6 +57,49 @@ class InteractivePlot(object):
             self.update_plot()
 
     def update_plot(self):
+        def plot_flow_edge_model(vcx, vcy, mu, rho, current_neighbor):
+            nudge_case = False
+            # apply model
+            neighbor_offsets = np.array([[0, 1], [1, 0], [ 0,-1], [-1, 0], [1, 1], [1,-1], [-1, 1], [-1,-1]])
+            n = current_neighbor
+            oi = neighbor_offsets[n, 0]
+            oj = neighbor_offsets[n, 1]
+            edge_length = np.sqrt(oi**2 + oj**2)
+            edge_x = - oi / edge_length
+            edge_y = - oj / edge_length
+            vc_norm2 = vcx*vcx + vcy*vcy
+            vc_norm = np.sqrt(vc_norm2)
+            delta_max = 1. / (rho * mu)
+            # velocity along edge which minimizes friction
+            l_star = edge_x*vcx + edge_y*vcy # dot product
+            delta_min2 = vc_norm2 - l_star*l_star
+            l_max = -1.
+            nudge_vel = 0.1
+            lbda_0 = (nudge_vel + vc_norm) * mu * rho
+            l_nudge = min(nudge_vel / lbda_0, 0.1)
+            if delta_min2 <= delta_max*delta_max: # no intersection between friction-constraint circle and line
+                l_max = l_star + np.sqrt(delta_max*delta_max - delta_min2)
+            if l_max <= 0: # not allowed to move according to hard constraint
+                cos_theta = l_star / vc_norm
+                if cos_theta >= np.cos(np.pi/4.): # check if the solution is missed because of discretization
+                    l_max = l_star
+            # nudge case # TODO: sqrt -> csqrt, predeclare missing 
+            l_opt = max(l_max, l_nudge)
+            print("optimal velocity: {}".format(l_opt))
+
+            from matplotlib import pyplot as plt
+            plt.figure("vc")
+            plt.cla()
+            for oi, oj in neighbor_offsets:
+                plt.plot([0, oi], [0, oj], color='lightgrey')
+            plt.plot([0, vcx], [0, vcy], color='yellow')
+            plt.plot([0, edge_x], [0, edge_y], color='black')
+            plt.gca().add_artist(plt.Circle((vcx, vcy), delta_max, fill=False, color='yellow'))
+            plt.gca().add_artist(plt.Circle((edge_x * l_star, edge_y * l_star), 0.02, fill=False, color='black'))
+            plt.gca().add_artist(plt.Circle((edge_x * l_opt, edge_y * l_opt), 0.04, fill=False, color='red' if nudge_case else 'black'))
+            plt.gca().add_artist(plt.Circle((edge_x * l_max, edge_y * l_max), 0.02, fill=True, color='black'))
+            plt.gca().add_artist(plt.Circle((edge_x * l_nudge, edge_y * l_nudge), 0.02, fill=True, color='red'))
+            plt.axis('equal')
         plot_flow_edge_model(self.vcx, self.vcy, self.mu, self.rho, self.current_neighbor)
         plt.pause(0.1)
 
