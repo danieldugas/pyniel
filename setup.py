@@ -5,6 +5,6 @@ setup(
     name="pyniel",
     description='Python tools for Yours Truly',
     author='Daniel Dugas',
-    version='0.1',
+    version='0.2',
     packages=find_packages(),
 )

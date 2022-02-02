@@ -1,10 +1,25 @@
 from matplotlib import pyplot as plt
 
+def set_visible(lines, visible):
+    if isinstance(lines, list):
+        for line in lines:
+            line.set_visible(visible)
+    else:
+        lines.set_visible(visible)
+
+def get_visible(lines):
+    if isinstance(lines, list):
+        for line in lines:
+            return line.get_visible()
+        return False
+    else:
+        return lines.get_visible()
+
 def make_legend_pickable(legend, lines):
     """ Allows clicking the legend to toggle line visibility
     arguments:
         legend: the legend object (output of plt.legend())
-        lines: list of line objects corresponding to legend items.
+        lines: list of list of line objects corresponding to legend items.
                should be of same length as legend.get_lines()
                Note: line objects can be anything which has a set_visible(bool is_visible) method
     """
@@ -16,9 +31,9 @@ def make_legend_pickable(legend, lines):
         lineobjects[item] = line
     def on_click_legenditem(event):
         legenditem = event.artist
-        is_visible = legenditem.get_visible()
-        lineobjects[legenditem].set_visible(not is_visible)
-        legenditem.set_visible(not is_visible)
+        is_visible = get_visible(legenditem)
+        set_visible(lineobjects[legenditem], not is_visible)
+        set_visible(legenditem, not is_visible)
         plt.gcf().canvas.draw()
     plt.connect('pick_event', on_click_legenditem)
 
