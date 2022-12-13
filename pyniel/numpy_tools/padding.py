@@ -2,6 +2,24 @@ import numpy as np
 from indexing import as_idx, filter_invalid_idx
 
 
+def extend_axis(a, axis, pad_with=0, prepend=False):
+    """ extends an array in a specific axis
+
+    Example
+    ----
+    >>> a = np.array([[1, 2],
+                      [3, 4]])
+    >>> extend_axis(a, 1, pad_with=7)
+    array([[1, 2, 6],
+           [3, 4, 6]])
+    """
+    new_shape = np.array(a.shape)
+    new_shape[axis] = 1
+    new = np.full(new_shape, fill_value=pad_with)
+    resized = np.concatenate([a, new], axis=axis)
+    return resized
+
+
 def resize_with_zeros(a, shape):
     """ special case of resize_with_fill where fill_value is 0
     """
